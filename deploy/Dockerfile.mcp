@@ -1,8 +1,9 @@
 # openGym MCP server over HTTP, for the VM deploy (docker-compose.vm.yml).
 #
 # The upstream mcp/ server is stdio-only. This image wraps it with supergateway
-# so remote MCP clients (Claude, Cursor, …) can reach it as a Streamable HTTP
-# endpoint at /mcp, guarded by SUPERGATEWAY_API_KEY (Bearer token).
+# (Streamable HTTP, bound to localhost) plus deploy/mcp-auth-proxy.js, which is
+# the public listener on :8000 enforcing Authorization: Bearer $MCP_API_KEY —
+# supergateway's own --apiKey is only documented on main, not yet published.
 #
 # Build context is the repository root — the server imports
 # ../../frontend/src/lib/*.js, so both directories must be copied in.
@@ -24,6 +25,9 @@ COPY mcp/src ./mcp/src
 # (progression, 1RM, muscle balance, exercise catalogue).
 COPY frontend/src/lib ./frontend/src/lib
 
+COPY deploy/mcp-auth-proxy.js deploy/mcp-entrypoint.sh ./deploy/
+RUN chmod +x ./deploy/mcp-entrypoint.sh
+
 WORKDIR /app/mcp
 
 ENV OPENGYM_DATA=/data \
@@ -32,12 +36,5 @@ ENV OPENGYM_DATA=/data \
 EXPOSE 8000
 
 # OPENGYM_UID: optional, auto-detected on single-profile instances.
-# SUPERGATEWAY_API_KEY: required — clients must send Authorization: Bearer <key>.
-# Passed explicitly via --apiKey (env-only wasn't enforced on 4.0.0 streamableHttp).
-CMD ["sh", "-c", "exec supergateway \
-     --stdio 'node /app/mcp/src/index.js' \
-     --outputTransport streamableHttp \
-     --streamableHttpPath /mcp \
-     --port 8000 \
-     --healthEndpoint /healthz \
-     --apiKey \"$SUPERGATEWAY_API_KEY\""]
+# MCP_API_KEY: required — clients must send Authorization: Bearer <key>.
+CMD ["/app/deploy/mcp-entrypoint.sh"]

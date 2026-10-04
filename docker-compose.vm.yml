@@ -25,7 +25,7 @@ services:
     environment:
       - OPENGYM_DATA=/data
       - OPENGYM_UID=${OPENGYM_UID:-}
-      - SUPERGATEWAY_API_KEY=${MCP_API_KEY:?set MCP_API_KEY in .env}
+      - MCP_API_KEY=${MCP_API_KEY:?set MCP_API_KEY in .env}
     volumes:
       # Read-only by design: the MCP server only ever reads state-*.json.
       - ./data:/data:ro

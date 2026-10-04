@@ -71,7 +71,8 @@ Depois, em `./data/db.json`, pegue seu `users[].id` e configure `ADMIN_UIDS` +
 Endpoint: `https://mcp.<seu-dominio>/mcp` (Streamable HTTP).
 Auth: `Authorization: Bearer <MCP_API_KEY do .env>`.
 
-Health: `https://mcp.<seu-dominio>/healthz` → `ok` (não exige chave? — verifique).
+Health: `https://mcp.<seu-dominio>/healthz` → `ok` (aberto por design — só o
+`/mcp` exige a chave).
 
 ### Config de cliente (Claude Desktop, Cursor…)
 
