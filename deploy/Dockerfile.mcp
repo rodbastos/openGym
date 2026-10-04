@@ -33,9 +33,11 @@ EXPOSE 8000
 
 # OPENGYM_UID: optional, auto-detected on single-profile instances.
 # SUPERGATEWAY_API_KEY: required — clients must send Authorization: Bearer <key>.
-CMD ["supergateway", \
-     "--stdio", "node /app/mcp/src/index.js", \
-     "--outputTransport", "streamableHttp", \
-     "--streamableHttpPath", "/mcp", \
-     "--port", "8000", \
-     "--healthEndpoint", "/healthz"]
+# Passed explicitly via --apiKey (env-only wasn't enforced on 4.0.0 streamableHttp).
+CMD ["sh", "-c", "exec supergateway \
+     --stdio 'node /app/mcp/src/index.js' \
+     --outputTransport streamableHttp \
+     --streamableHttpPath /mcp \
+     --port 8000 \
+     --healthEndpoint /healthz \
+     --apiKey \"$SUPERGATEWAY_API_KEY\""]
