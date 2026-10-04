@@ -1,0 +1,41 @@
+# openGym MCP server over HTTP, for the VM deploy (docker-compose.vm.yml).
+#
+# The upstream mcp/ server is stdio-only. This image wraps it with supergateway
+# so remote MCP clients (Claude, Cursor, …) can reach it as a Streamable HTTP
+# endpoint at /mcp, guarded by SUPERGATEWAY_API_KEY (Bearer token).
+#
+# Build context is the repository root — the server imports
+# ../../frontend/src/lib/*.js, so both directories must be copied in.
+
+FROM node:22-alpine
+
+# Pinned to a version published > 7 days ago.
+ARG SUPERGATEWAY_VERSION=4.0.0
+RUN npm install -g supergateway@${SUPERGATEWAY_VERSION}
+
+WORKDIR /app
+
+# Runtime deps only — vitest stays out of the image.
+COPY mcp/package.json mcp/package-lock.json ./mcp/
+RUN cd mcp && npm ci --omit=dev
+
+COPY mcp/src ./mcp/src
+# The MCP tools reuse the frontend's pure training-logic helpers
+# (progression, 1RM, muscle balance, exercise catalogue).
+COPY frontend/src/lib ./frontend/src/lib
+
+WORKDIR /app/mcp
+
+ENV OPENGYM_DATA=/data \
+    NODE_ENV=production
+
+EXPOSE 8000
+
+# OPENGYM_UID: optional, auto-detected on single-profile instances.
+# SUPERGATEWAY_API_KEY: required — clients must send Authorization: Bearer <key>.
+CMD ["supergateway", \
+     "--stdio", "node /app/mcp/src/index.js", \
+     "--outputTransport", "streamableHttp", \
+     "--streamableHttpPath", "/mcp", \
+     "--port", "8000", \
+     "--healthEndpoint", "/healthz"]

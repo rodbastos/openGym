@@ -1,0 +1,46 @@
+# GCP VM deploy — adds the MCP HTTP bridge and the Cloudflare tunnel connector
+# to the upstream stack. Nothing upstream is modified.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.vm.yml up -d
+#
+# Public traffic arrives only through the Cloudflare tunnel (outbound-only from
+# the VM, no inbound ports needed). Public hostnames in the tunnel config:
+#
+#   opengym.<domain>  → http://web:80
+#   mcp.<domain>      → http://mcp:8000    (endpoint: https://mcp.<domain>/mcp)
+
+services:
+  web:
+    # Only localhost on the VM can reach the app directly; the tunnel is the
+    # public front door. !override replaces the upstream port mapping instead
+    # of adding to it.
+    ports: !override
+      - "127.0.0.1:${WEB_PORT:-8080}:${NGINX_PORT:-80}"
+
+  mcp:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.mcp
+    restart: unless-stopped
+    environment:
+      - OPENGYM_DATA=/data
+      - OPENGYM_UID=${OPENGYM_UID:-}
+      - SUPERGATEWAY_API_KEY=${MCP_API_KEY:?set MCP_API_KEY in .env}
+    volumes:
+      # Read-only by design: the MCP server only ever reads state-*.json.
+      - ./data:/data:ro
+    expose:
+      - "8000"
+    depends_on:
+      api:
+        condition: service_started
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    depends_on:
+      - web
+      - mcp
