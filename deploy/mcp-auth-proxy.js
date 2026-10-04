@@ -45,6 +45,6 @@ http.createServer((req, res) => {
     res.end('bad gateway')
   })
   req.pipe(upstream)
-}).listen(8000, '0.0.0.0', () => {
+}).listen(8000, () => { // no host → binds :: (IPv6 + IPv4); 'localhost' may resolve to ::1
   console.log('[mcp-auth-proxy] listening on :8000 → ' + UPSTREAM)
 })
