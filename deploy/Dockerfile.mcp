@@ -1,9 +1,10 @@
 # openGym MCP server over HTTP, for the VM deploy (docker-compose.vm.yml).
 #
-# The upstream mcp/ server is stdio-only. This image wraps it with supergateway
-# (Streamable HTTP, bound to localhost) plus deploy/mcp-auth-proxy.js, which is
-# the public listener on :8000 enforcing Authorization: Bearer $MCP_API_KEY —
-# supergateway's own --apiKey is only documented on main, not yet published.
+# The upstream mcp/ server is stdio-only and single-profile. This image runs
+# deploy/mcp-server.js, which reads /data/mcp-users.json (uid ↔ key pairs),
+# spawns one supergateway per uid (Streamable HTTP on 127.0.0.1:9000+i), and
+# serves a Bearer gate on :8000 routing each key to its uid. supergateway's
+# own --apiKey is documented on main but not yet in a published release.
 #
 # Build context is the repository root — the server imports
 # ../../frontend/src/lib/*.js, so both directories must be copied in.
@@ -25,8 +26,7 @@ COPY mcp/src ./mcp/src
 # (progression, 1RM, muscle balance, exercise catalogue).
 COPY frontend/src/lib ./frontend/src/lib
 
-COPY deploy/mcp-auth-proxy.js deploy/mcp-entrypoint.sh ./deploy/
-RUN chmod +x ./deploy/mcp-entrypoint.sh
+COPY deploy/mcp-server.js ./deploy/
 
 WORKDIR /app/mcp
 
@@ -35,6 +35,4 @@ ENV OPENGYM_DATA=/data \
 
 EXPOSE 8000
 
-# OPENGYM_UID: optional, auto-detected on single-profile instances.
-# MCP_API_KEY: required — clients must send Authorization: Bearer <key>.
-CMD ["/app/deploy/mcp-entrypoint.sh"]
+CMD ["node", "/app/deploy/mcp-server.js"]

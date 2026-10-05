@@ -24,10 +24,9 @@ services:
     restart: unless-stopped
     environment:
       - OPENGYM_DATA=/data
-      - OPENGYM_UID=${OPENGYM_UID:-}
-      - MCP_API_KEY=${MCP_API_KEY:?set MCP_API_KEY in .env}
     volumes:
-      # Read-only by design: the MCP server only ever reads state-*.json.
+      # Read-only by design: the MCP server only ever reads state-*.json and
+      # the uid↔key map at /data/mcp-users.json (managed by deploy/mcp-user.sh).
       - ./data:/data:ro
     expose:
       - "8000"

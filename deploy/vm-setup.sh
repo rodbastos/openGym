@@ -76,12 +76,8 @@ if [ -z "$APP_HOST" ]; then
 fi
 sed -i "s|^RP_ID=.*|RP_ID=${APP_HOST}|; s|^ORIGIN=.*|ORIGIN=https://${APP_HOST}|" .env
 
-# MCP_API_KEY — generate if unset.
-if ! grep -qE '^MCP_API_KEY=.+' .env; then
-  MCP_API_KEY="$(openssl rand -hex 32)"
-  sed -i "s|^MCP_API_KEY=.*|MCP_API_KEY=${MCP_API_KEY}|" .env
-  echo "==> Generated MCP_API_KEY (saved in .env)"
-fi
+# MCP keys live in data/mcp-users.json — created after your profile exists:
+#   ./deploy/mcp-user.sh add <your-uid>   (uid: data/db.json → users[].id)
 
 # TUNNEL_TOKEN — must come from the Cloudflare dashboard.
 if ! grep -qE '^TUNNEL_TOKEN=.+' .env; then
@@ -106,4 +102,4 @@ echo "==> Done. Status:"
 $COMPOSE ps
 echo
 echo "Next: https://${APP_HOST} — create your profile + passkey."
-echo "MCP endpoint: https://mcp.<your-domain>/mcp  (Authorization: Bearer \$MCP_API_KEY)"
+echo "Then enable MCP for your uid: ./deploy/mcp-user.sh add <uid>"

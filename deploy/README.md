@@ -69,10 +69,24 @@ Depois, em `./data/db.json`, pegue seu `users[].id` e configure `ADMIN_UIDS` +
 ## Servidor MCP
 
 Endpoint: `https://mcp-gym.<seu-dominio>/mcp` (Streamable HTTP).
-Auth: `Authorization: Bearer <MCP_API_KEY do .env>`.
+Auth: por usuário — cada `uid` tem sua chave em `./data/mcp-users.json`.
 
 Health: `https://mcp-gym.<seu-dominio>/healthz` → `ok` (aberto por design — só o
 `/mcp` exige a chave).
+
+### Dar acesso MCP a um usuário
+
+O uid da pessoa precisa existir primeiro (ela cria o perfil no app). Depois, na
+VM:
+
+```bash
+./deploy/mcp-user.sh add <uid>   # gera a chave e imprime a URL pronta
+./deploy/mcp-user.sh list        # uids e chaves (mascaradas)
+./deploy/mcp-user.sh rm <uid>    # revoga
+```
+
+Cada chave só lê os dados do próprio uid — o servidor MCP de cada usuário roda
+com `OPENGYM_UID` fixo e as tools não aceitam troca de perfil.
 
 > **Nota sobre hostname**: use um subdomínio de *um nível* (`mcp-gym.`).
 > O cert Universal SSL do Cloudflare cobre `*.dominio`, mas não
@@ -87,7 +101,7 @@ Clientes que aceitam URL + headers:
   "mcpServers": {
     "opengym": {
       "url": "https://mcp-gym.<seu-dominio>/mcp",
-      "headers": { "Authorization": "Bearer <MCP_API_KEY>" }
+      "headers": { "Authorization": "Bearer <chave-do-usuario>" }
     }
   }
 }
@@ -97,7 +111,7 @@ Clientes que **não enviam headers** (ex.: conectores do ChatGPT) — a chave va
 na URL:
 
 ```
-https://mcp-gym.<seu-dominio>/mcp?key=<MCP_API_KEY>
+https://mcp-gym.<seu-dominio>/mcp?key=<chave-do-usuario>
 ```
 
 (o `?key=` é removido antes de chegar ao MCP; ainda assim prefira o Bearer
@@ -114,7 +128,7 @@ supergateway como ponte local:
       "args": [
         "-y", "supergateway",
         "--streamableHttp", "https://mcp-gym.<seu-dominio>/mcp",
-        "--oauth2Bearer", "<MCP_API_KEY>"
+        "--oauth2Bearer", "<chave-do-usuario>"
       ]
     }
   }
