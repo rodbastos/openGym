@@ -33,7 +33,7 @@ PY
     $COMPOSE restart mcp
     ;;
   list)
-    sudo python3 -c "import json;[print(u['uid'], u['key'][:8]+'…') for u in json.load(open('$FILE'))['users']]"
+    sudo python3 -c "import json;[print(u['uid'], '→', 'https://${MCP_HOST}/mcp?key='+u['key']) for u in json.load(open('$FILE'))['users']]"
     ;;
   rm)
     uid="${2:?usage: mcp-user.sh rm <uid>}"
