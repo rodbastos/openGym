@@ -22,8 +22,14 @@ http.createServer((req, res) => {
     return
   }
 
+  // Key accepted as Authorization: Bearer, X-API-Key, or ?key= — the query
+  // form exists for MCP clients that cannot send custom headers (ChatGPT).
+  const url = new URL(req.url, 'http://x')
   const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
-  if (bearer !== KEY && req.headers['x-api-key'] !== KEY) {
+  const queryKey = url.searchParams.get('key') || ''
+  url.searchParams.delete('key')
+
+  if (bearer !== KEY && req.headers['x-api-key'] !== KEY && queryKey !== KEY) {
     res.writeHead(401, { 'content-type': 'application/json' })
     res.end(JSON.stringify({ error: 'unauthorized' }))
     return
@@ -33,7 +39,7 @@ http.createServer((req, res) => {
   delete headers['x-api-key']
 
   const upstream = http.request(
-    UPSTREAM + req.url,
+    UPSTREAM + url.pathname + url.search,
     { method: req.method, headers },
     (up) => {
       res.writeHead(up.statusCode, up.headers)

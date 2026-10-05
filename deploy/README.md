@@ -68,26 +68,40 @@ Depois, em `./data/db.json`, pegue seu `users[].id` e configure `ADMIN_UIDS` +
 
 ## Servidor MCP
 
-Endpoint: `https://mcp.<seu-dominio>/mcp` (Streamable HTTP).
+Endpoint: `https://mcp-gym.<seu-dominio>/mcp` (Streamable HTTP).
 Auth: `Authorization: Bearer <MCP_API_KEY do .env>`.
 
-Health: `https://mcp.<seu-dominio>/healthz` → `ok` (aberto por design — só o
+Health: `https://mcp-gym.<seu-dominio>/healthz` → `ok` (aberto por design — só o
 `/mcp` exige a chave).
 
-### Config de cliente (Claude Desktop, Cursor…)
+> **Nota sobre hostname**: use um subdomínio de *um nível* (`mcp-gym.`).
+> O cert Universal SSL do Cloudflare cobre `*.dominio`, mas não
+> `mcp.sub.dominio` (segundo nível exige Advanced Certificate Manager).
 
-Clientes que aceitam servidores MCP remotos:
+### Config de cliente (ChatGPT, Claude, Cursor…)
+
+Clientes que aceitam URL + headers:
 
 ```json
 {
   "mcpServers": {
     "opengym": {
-      "url": "https://mcp.<seu-dominio>/mcp",
+      "url": "https://mcp-gym.<seu-dominio>/mcp",
       "headers": { "Authorization": "Bearer <MCP_API_KEY>" }
     }
   }
 }
 ```
+
+Clientes que **não enviam headers** (ex.: conectores do ChatGPT) — a chave vai
+na URL:
+
+```
+https://mcp-gym.<seu-dominio>/mcp?key=<MCP_API_KEY>
+```
+
+(o `?key=` é removido antes de chegar ao MCP; ainda assim prefira o Bearer
+quando o cliente suportar — URLs aparecem em logs.)
 
 Clientes que só aceitam stdio (Claude Desktop clássico): use o próprio
 supergateway como ponte local:
@@ -99,7 +113,7 @@ supergateway como ponte local:
       "command": "npx",
       "args": [
         "-y", "supergateway",
-        "--streamableHttp", "https://mcp.<seu-dominio>/mcp",
+        "--streamableHttp", "https://mcp-gym.<seu-dominio>/mcp",
         "--oauth2Bearer", "<MCP_API_KEY>"
       ]
     }
